@@ -44,9 +44,10 @@ public:
         int frameRate = 60;
         int bitRate = 30000000;
         bool audio = false;
-        bool hardwareEncoding = true;
+        bool hardwareEncoding = false;
         bool inputAlpha = false;
         bool bgr = false;
+        bool h265Encoding = true;
     };
 
     enum class Error {

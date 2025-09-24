@@ -94,6 +94,10 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
         *codec = avcodec_find_encoder_by_name("h264_nvenc");
     }
 
+    if (settings.h265Encoding && (*codec)->type == AVMEDIA_TYPE_VIDEO) {
+        *codec = avcodec_find_encoder_by_name("libx265");
+    }
+
     ost->tempPacket = av_packet_alloc();
     if (ost->tempPacket == nullptr) { return Error::CouldNotAllocatePacket; }
 
@@ -109,7 +113,7 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
 
     ost->codecContext = codecContext;
 
-    if (strcmp((*codec)->name, "libx264") == 0) {
+    if (strcmp((*codec)->name, "libx264") == 0 || strcmp((*codec)->name, "libx265") == 0) {
         av_opt_set(ost->codecContext->priv_data, "preset", "ultrafast", 0);
         av_opt_set(ost->codecContext->priv_data, "tune", "zerolatency", 0);
     }
