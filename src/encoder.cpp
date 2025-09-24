@@ -150,7 +150,7 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
                     AVRational{1, codecContext->sample_rate};
             break;
         case AVMEDIA_TYPE_VIDEO:
-            codecContext->codec_id = codecId;
+            // codecContext->codec_id = codecId;
             codecContext->bit_rate = settings.bitRate;
             codecContext->width = settings.width;
             codecContext->height = settings.height;

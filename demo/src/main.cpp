@@ -20,7 +20,8 @@ int main() {
     settings.height = 1440;
 
     // Encoder settings
-    settings.hardwareEncoding = true;
+    settings.hardwareEncoding = false;
+    settings.h265Encoding = true;
     settings.bitRate = 16000000;
 
     // Audio settings
