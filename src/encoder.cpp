@@ -118,6 +118,12 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
         av_opt_set(ost->codecContext->priv_data, "tune", "zerolatency", 0);
     }
 
+    // If using libx265, set the tag:v to HVC1
+    if (strcmp((*codec)->name, "libx265") == 0) {
+        // * fourcc (LSB first, so "ABCD" -> ('D'<<24) + ('C'<<16) + ('B'<<8) + 'A').
+        codecContext->codec_tag = ('1'<<24) + ('C'<<16) + ('V'<<8) + 'H';
+    }
+
     switch ((*codec)->type) {
         case AVMEDIA_TYPE_AUDIO:
             codecContext->sample_fmt = (*codec)->sample_fmts
