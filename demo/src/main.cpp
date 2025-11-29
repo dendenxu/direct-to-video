@@ -20,8 +20,9 @@ int main() {
     settings.height = 1440;
 
     // Encoder settings
-    settings.hardwareEncoding = false;
-    settings.h265Encoding = true;
+    settings.codec = "libx265";
+    settings.preset = "ultrafast";
+    settings.tune = "zerolatency";
     settings.bitRate = 16000000;
 
     // Audio settings
