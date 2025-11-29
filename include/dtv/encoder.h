@@ -38,14 +38,14 @@ public:
     struct VideoSettings {
         std::string fname = "";
         std::string codec = "libx265"; // libx264, libx265, h264_nvenc, hevc_nvenc
-        std::string preset = "ultrafast";
+        std::string preset = "fast";
         std::string tune = "zerolatency";
         int width = 1920;
         int height = 1080;
         int inputWidth = 1920;
         int inputHeight = 1080;
         int frameRate = 60;
-        int bitRate = 30000000;
+        int bitRate = 40000000;
         bool audio = false;
         bool inputAlpha = false;
         bool bgr = false;
