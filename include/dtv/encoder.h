@@ -37,6 +37,9 @@ class Encoder {
 public:
     struct VideoSettings {
         std::string fname = "";
+        std::string codec = "libx265"; // libx264, libx265, h264_nvenc, hevc_nvenc
+        std::string preset = "ultrafast";
+        std::string tune = "zerolatency";
         int width = 1920;
         int height = 1080;
         int inputWidth = 1920;
@@ -44,10 +47,8 @@ public:
         int frameRate = 60;
         int bitRate = 30000000;
         bool audio = false;
-        bool hardwareEncoding = false;
         bool inputAlpha = false;
         bool bgr = false;
-        bool h265Encoding = true;
     };
 
     enum class Error {

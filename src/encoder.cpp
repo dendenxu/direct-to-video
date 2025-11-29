@@ -90,12 +90,8 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
     if (*codec == nullptr) { *codec = avcodec_find_encoder(codecId); }
     if (*codec == nullptr) { return Error::CouldNotFindEncoder; }
 
-    if (settings.hardwareEncoding && (*codec)->type == AVMEDIA_TYPE_VIDEO) {
-        *codec = avcodec_find_encoder_by_name("h264_nvenc");
-    }
-
-    if (settings.h265Encoding && (*codec)->type == AVMEDIA_TYPE_VIDEO) {
-        *codec = avcodec_find_encoder_by_name("libx265");
+    if ((*codec)->type == AVMEDIA_TYPE_VIDEO) {
+        *codec = avcodec_find_encoder_by_name(settings.codec.c_str());
     }
 
     ost->tempPacket = av_packet_alloc();
@@ -114,8 +110,8 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
     ost->codecContext = codecContext;
 
     if (strcmp((*codec)->name, "libx264") == 0 || strcmp((*codec)->name, "libx265") == 0) {
-        av_opt_set(ost->codecContext->priv_data, "preset", "ultrafast", 0);
-        av_opt_set(ost->codecContext->priv_data, "tune", "zerolatency", 0);
+        av_opt_set(ost->codecContext->priv_data, "preset", settings.preset.c_str(), 0);
+        av_opt_set(ost->codecContext->priv_data, "tune", settings.tune.c_str(), 0);
     }
 
     // If using libx265, set the tag:v to HVC1
