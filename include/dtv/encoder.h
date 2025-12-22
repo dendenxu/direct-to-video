@@ -37,9 +37,10 @@ class Encoder {
 public:
     struct VideoSettings {
         std::string fname = "";
-        std::string codec = "libx265"; // libx264, libx265, h264_nvenc, hevc_nvenc
+        std::string codec = "libx264"; // libx264, libx265, h264_nvenc, hevc_nvenc
         std::string preset = "fast";
         std::string tune = "zerolatency";
+        int crf = 18;
         int width = 1920;
         int height = 1080;
         int inputWidth = 1920;

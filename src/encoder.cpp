@@ -112,6 +112,9 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
     if (strcmp((*codec)->name, "libx264") == 0 || strcmp((*codec)->name, "libx265") == 0) {
         av_opt_set(ost->codecContext->priv_data, "preset", settings.preset.c_str(), 0);
         av_opt_set(ost->codecContext->priv_data, "tune", settings.tune.c_str(), 0);
+        av_opt_set(ost->codecContext->priv_data, "crf", std::to_string(settings.crf).c_str(), 0);
+        av_opt_set(ost->codecContext->priv_data, "maxrate", std::to_string(settings.bitRate).c_str(), 0);
+        av_opt_set(ost->codecContext->priv_data, "bufsize", std::to_string(settings.bitRate * 2).c_str(), 0);
     }
 
     // If using libx265, set the tag:v to HVC1
