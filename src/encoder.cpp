@@ -69,10 +69,12 @@ atg_dtv::Frame *atg_dtv::Encoder::newFrame(bool wait) {
     }
 
     ++m_videoStream.writePts;
+    const int audioChannels = m_videoSettings.audio
+                                      ? m_audioStream.codecContext->channels
+                                      : 0;
     Frame *frame = m_queue.newFrame(m_videoSettings.inputWidth,
-                                    m_videoSettings.inputHeight, m_lineWidth,
-                                    audioSamples,
-                                    m_audioStream.codecContext->channels, wait);
+                                     m_videoSettings.inputHeight, m_lineWidth,
+                                     audioSamples, audioChannels, wait);
     return frame;
 }
 
@@ -161,7 +163,10 @@ atg_dtv::Encoder::Error addStream(atg_dtv::OutputStream *ost,
             codecContext->height = settings.height;
 
             ost->av_stream->time_base = AVRational{1, settings.frameRate};
+            ost->av_stream->avg_frame_rate = AVRational{settings.frameRate, 1};
+            ost->av_stream->r_frame_rate = AVRational{settings.frameRate, 1};
             codecContext->time_base = ost->av_stream->time_base;
+            codecContext->framerate = AVRational{settings.frameRate, 1};
 
             codecContext->pix_fmt = AV_PIX_FMT_YUV420P;
 
@@ -355,6 +360,12 @@ atg_dtv::Encoder::Error flush(AVFormatContext *oc, atg_dtv::OutputStream *ost) {
         av_packet_rescale_ts(ost->tempPacket, codecContext->time_base,
                              ost->av_stream->time_base);
         ost->tempPacket->stream_index = ost->av_stream->index;
+        if (codecContext->codec_type == AVMEDIA_TYPE_VIDEO &&
+            ost->tempPacket->duration <= 0) {
+            ost->tempPacket->duration =
+                    av_rescale_q(1, codecContext->time_base,
+                                 ost->av_stream->time_base);
+        }
 
         if (av_interleaved_write_frame(oc, ost->tempPacket) < 0) {
             return Error::CouldNotWriteOutputPacket;
@@ -437,6 +448,7 @@ void copyVideoData(atg_dtv::Frame *src, AVFrame *,
     }
 
     ost->frame->pts = ost->nextPts++;
+    ost->frame->pkt_duration = 1;
 }
 
 atg_dtv::Encoder::Error writeVideoFrame(AVFormatContext *oc,
@@ -460,6 +472,10 @@ atg_dtv::Encoder::Error writeVideoFrame(AVFormatContext *oc,
         av_packet_rescale_ts(packet, codecContext->time_base,
                              av_stream->time_base);
         packet->stream_index = av_stream->index;
+        if (packet->duration <= 0) {
+            packet->duration = av_rescale_q(1, codecContext->time_base,
+                                            av_stream->time_base);
+        }
 
         if (av_interleaved_write_frame(oc, packet) < 0) {
             return Error::CouldNotWriteOutputPacket;
@@ -481,6 +497,9 @@ void atg_dtv::Encoder::setup() {
     }
 
     m_fmt = m_oc->oformat;
+    if (m_oc->priv_data != nullptr) {
+        av_opt_set_int(m_oc->priv_data, "use_editlist", 0, 0);
+    }
 
     if (m_fmt->video_codec != AV_CODEC_ID_NONE) {
         addStream(&m_videoStream, m_oc, &m_videoCodec, m_fmt->video_codec,
@@ -554,10 +573,21 @@ void atg_dtv::Encoder::worker() {
         }
     }
 
-    flush(m_oc, &m_videoStream);
-    flush(m_oc, &m_audioStream);
+    m_videoStream.av_stream->duration =
+            av_rescale_q(m_videoStream.nextPts,
+                         m_videoStream.codecContext->time_base,
+                         m_videoStream.av_stream->time_base);
 
-    av_write_trailer(m_oc);
+    err = flush(m_oc, &m_videoStream);
+    if (err != Error::None) { goto end; }
+    if (m_videoSettings.audio) {
+        err = flush(m_oc, &m_audioStream);
+        if (err != Error::None) { goto end; }
+    }
+
+    if (av_write_trailer(m_oc) < 0) {
+        err = Error::CouldNotWriteOutputPacket;
+    }
 
 end:
     std::lock_guard<std::mutex> lk(m_lock);
